@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Band, Event, Performance, Venue
+from .models import Band, Event, FavoriteBand, Performance, Venue
 
 
 class BandSerializer(serializers.ModelSerializer):
@@ -52,3 +52,17 @@ class EventSerializer(serializers.ModelSerializer):
             "performances",
         )
         read_only_fields = ("submitted_by", "created_at")
+
+
+class FavoriteBandSerializer(serializers.ModelSerializer):
+    band_name = serializers.CharField(source="band.name", read_only=True)
+
+    class Meta:
+        model = FavoriteBand
+        fields = ("id", "band", "band_name")
+
+    def validate_band(self, band):
+        request = self.context["request"]
+        if FavoriteBand.objects.filter(user=request.user, band=band).exists():
+            raise serializers.ValidationError("You already follow this band.")
+        return band
